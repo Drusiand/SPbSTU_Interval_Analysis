@@ -26,9 +26,9 @@ class Sample:
         self.data.append(interval)
         self.__update_borders()
 
-    def draw_sample_plot(self, title, show=True):
-        plt.title(title)
+    def draw_sample_plot(self, title="", show=True):
         for elem, value in zip(self.data, self.values):
             plt.plot([value, value], [elem.begin, elem.end], c="red")
         if show:
+            plt.title(title)
             plt.show()

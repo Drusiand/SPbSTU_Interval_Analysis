@@ -1,7 +1,7 @@
 import scipy.optimize as opt
 import scipy.spatial as spa
 from matplotlib.patches import Polygon
-
+from interval import Interval
 from sample import Sample
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,19 +39,19 @@ class UtilHelper:
         return res.x[-2], res.x[-1]
 
     @staticmethod
-    def plot_regression(coeffs: tuple[float, float], sample: Sample, title: str, offset: float = 0.25):
+    def plot_regression(coeffs: tuple[float, float], sample: Sample, title: str = "", offset: float = 0.25):
         x = [sample.values[0] - offset]
         x.extend(sample.values)
         x.append(sample.values[-1] + offset)
 
         y = [coeffs[0] + coeffs[1] * x_i for x_i in x]
         plt.plot(x, y)
-        sample.draw_sample_plot("", show=False)
+        sample.draw_sample_plot(show=False)
         plt.title(title)
         plt.show()
 
     @staticmethod
-    def build_inform_set(sample: Sample, beta_opt: tuple[float, float], plot: bool = False):
+    def build_inform_set(sample: Sample, beta_opt: tuple[float, float], plot: bool = False, title: str = ""):
         tmp = list()
         for i in range(len(sample)):
             tmp.append(np.array([1, sample.values[i], -sample.data[i].end]))
@@ -70,15 +70,13 @@ class UtilHelper:
         y.append(y[0])
         if plot:
             plt.plot(x, y)
-            plt.title("Inform set")
             plt.scatter(beta_opt[0], beta_opt[1])
-            plt.xlabel("beta_0")
-            plt.ylabel("beta_1")
+            plt.title(title)
             plt.show()
         return hs
 
     @staticmethod
-    def plot_corridor(sample, hs, offset=0.25):
+    def get_corridor(sample, hs, offset=0.25, plot=True, title: str = ""):
         raw_lines = list()
         for a in hs.intersections:
             raw_lines.append((a[0], a[1]))
@@ -110,12 +108,61 @@ class UtilHelper:
             y_max.append(max(tmp))
             y_min.append(min(tmp))
 
-        raw_poly = [(x, y) for x, y in zip(x, y_max)]
-        raw_poly.extend(reversed([(x, y) for x, y in zip(x, y_min)]))
+        corridor = Sample(sample.values)
+        corridor.data = [Interval(y_mi, y_ma) for y_mi, y_ma in zip(y_min[1:len(y_min) - 1],
+                                                                    y_max[1:len(y_max) - 1])]
 
-        fig, ax = plt.subplots(1)
-        polygon = Polygon(raw_poly, alpha=0.5)
+        if plot:
+            raw_poly = [(x, y) for x, y in zip(x, y_max)]
+            raw_poly.extend(reversed([(x, y) for x, y in zip(x, y_min)]))
+            fig, ax = plt.subplots(1)
+            UtilHelper.__plot_polygon(raw_poly, ax)
+            sample.draw_sample_plot(show=False)
+            plt.title(title)
+            plt.show()
+
+        return corridor
+
+    @staticmethod
+    def get_residuals(sample, coeffs):
+        res_sample = Sample(sample.values)
+        for interval, value in zip(sample.data, sample.values):
+            res_sample.append(Interval(interval.begin - (coeffs[0] + coeffs[1] * value),
+                                       interval.end - (coeffs[0] + coeffs[1] * value)))
+        return res_sample
+
+    @staticmethod
+    def __l(sample_interval: Interval, model_interval: Interval):
+        return model_interval.rad() / sample_interval.rad()
+
+    @staticmethod
+    def __r(sample_interval: Interval, model_interval: Interval):
+        return (sample_interval.mid() - model_interval.mid()) / sample_interval.rad()
+
+    @staticmethod
+    def __plot_polygon(vertices, ax, color=None, edge_color="black"):
+        if color is None:
+            polygon = Polygon(vertices, alpha=0.5)
+        else:
+            polygon = Polygon(vertices, alpha=0.5, fc=color, ec=edge_color)
         ax.add_patch(polygon)
-        sample.draw_sample_plot("", show=False)
-        plt.title("Corridor of conjoint values")
+
+    @staticmethod
+    def draw_status_diagram(sample, residuals, title=""):
+        _, ax = plt.subplots(1)
+        UtilHelper.__plot_polygon([[0, -1], [2, -3], [0, -3]], ax, "red")
+        UtilHelper.__plot_polygon([[0, 1], [2, 3], [0, 3]], ax, "red")
+        UtilHelper.__plot_polygon([[0, -1], [1, 0], [0, 1]], ax, "green")
+        UtilHelper.__plot_polygon([[0, -1], [1, 0], [0, 1], [2, 3], [2, -3]], ax, "yellow")
+        plt.xlim([0, 2])
+        plt.ylim([-3, 3])
+        plt.plot([1, 1], [-3, 3], "--", c="black")
+
+        x, y = list(), list()
+        for interval, res in zip(sample.data, residuals.data):
+            x.append(UtilHelper.__l(res, interval))
+            y.append(UtilHelper.__r(res, interval))
+        ax.scatter(x, y, ec="black")
+
+        plt.title(title)
         plt.show()

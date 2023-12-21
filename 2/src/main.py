@@ -16,9 +16,10 @@ def main():
     for interval in sample.data:
         print(interval)
 
-    sample.draw_sample_plot()
+    sample.draw_sample_plot("Interval sample")
     coeffs = UtilHelper.calculate_regression(sample)
-    UtilHelper.plot_regression(coeffs, sample)
+    print(f"beta_0 = {coeffs[0]}, beta_1 = {coeffs[1]}")
+    UtilHelper.plot_regression(coeffs, sample, "Point regression of interval sample")
     inform_set = UtilHelper.build_inform_set(sample, coeffs, plot=True)
     UtilHelper.plot_corridor(sample, inform_set)
 

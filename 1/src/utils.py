@@ -28,15 +28,8 @@ def find_correction_factor(sample_pos: Sample, sample_neg: Sample, steps=100) ->
     r_lower = min(sample.lower_max / sample.upper_min, sample.lower_min / sample.upper_max)
     r_upper = max(sample.lower_max / sample.upper_min, sample.lower_min / sample.upper_max)
 
-    # r_lower -= 2
-    # r_upper += 2
-
     tmp_r = r_lower
     r_jk_dict = dict()
-
-    # step = abs(r_upper - r_lower) / steps
-    # r_jk_dict[str(r_lower)] = jaccard_index_corrected(sample_pos, sample_neg, r_lower)
-    # r_jk_dict[str(r_upper)] = jaccard_index_corrected(sample_pos, sample_neg, r_upper)
 
     eps = 1e-5
     l_border = r_lower
@@ -52,35 +45,23 @@ def find_correction_factor(sample_pos: Sample, sample_neg: Sample, steps=100) ->
             r_border = tmp_r
         r_jk_dict[str(tmp_r)] = jaccard_index_corrected(sample_pos, sample_neg, tmp_r)
 
-    # while tmp_r <= r_upper:
-    #     r_jk_dict[str(tmp_r)] = jaccard_index_corrected(sample_pos, sample_neg, tmp_r)
-    #     tmp_r += step
-
-    # max_jk = max(r_jk_dict.values())
-    # for key in r_jk_dict.keys():
-    #     if r_jk_dict[key] == max_jk:
-    #         return float(key), r_jk_dict
     return tmp_r, r_jk_dict
 
 
-# def draw_r_jk_graph(data: dict):
-#     lists = [[float(key), value] for key, value in sorted(data.items(), key=lambda key: float(key[0]))]
-#     x, y = zip(*lists)
-#     plt.plot(x, y)
-#     plt.show()
-
-
 def draw_r_jk_graph(r: float, sample_pos: Sample, sample_neg: Sample, offset: float = 1):
+    plt.title("JK(R_opt) plot")
     x = linspace(r - offset, r + offset, 101)
     y = list()
+    plt.scatter(r, jaccard_index_corrected(sample_pos, sample_neg, r), c='red')
     for r_i in x:
         y.append(jaccard_index_corrected(sample_pos, sample_neg, r_i))
     plt.plot(x, y)
-    plt.scatter(r, jaccard_index_corrected(sample_pos, sample_neg, r), c='red')
+    plt.legend(("R_opt", "R_i"))
     plt.show()
 
 
-def draw_mode_frequency_plot(data: dict):
+def draw_mode_frequency_plot(data: dict, title: str):
+    plt.title(title)
     lists = [[key, value] for key, value in data.items()]
     x, y = list(), list()
     for elem in lists:

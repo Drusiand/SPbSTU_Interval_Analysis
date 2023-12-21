@@ -35,16 +35,10 @@ class Sample:
         zeros = self.__read_file(zeros_path, column_num)
 
         processed_data = list()
+        self.__zeros = list()
         for elem, zero in zip(raw_data, zeros):
             processed_data.append(elem - zero)
-
-        # xs, ys = list(), list()
-        # for i, zero in enumerate(zeros):
-        #     xs.append(i)
-        #     ys.append(zero)
-        #
-        # plt.hist(processed_data)
-        # plt.show()
+            self.__zeros.append(zero)
 
         self.data = list()
         for elem in processed_data:
@@ -55,9 +49,15 @@ class Sample:
     def __len__(self):
         return len(self.data)
 
-    def draw_sample_plot(self):
+    def draw_sample_plot(self, title: str):
+        plt.title(title)
         for i, elem in enumerate(self.data):
             plt.plot([i, i], [elem.begin, elem.end], c=DEFAULT_BLUE)
+        plt.show()
+
+    def draw_zeros_hist(self, title: str):
+        plt.title(title)
+        plt.hist(self.__zeros)
         plt.show()
 
     def extend(self, another: 'Sample'):
