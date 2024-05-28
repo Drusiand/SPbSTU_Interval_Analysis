@@ -16,12 +16,12 @@ class UtilHelper:
         A_ub = list()
         for i in range(len(sample)):
             tmp_constraint = [0 for _ in range(len(sample))]
-            tmp_constraint.extend([-1, -sample.values[i]])  # bruuuuh
+            tmp_constraint.extend([-1, -sample.wave_length[i]])  # bruuuuh
             tmp_constraint[i] = -sample.data[i].rad()
             A_ub.append(tmp_constraint)
 
             tmp_constraint = [0 for _ in range(len(sample))]
-            tmp_constraint.extend([1, sample.values[i]])  # bruuuuh
+            tmp_constraint.extend([1, sample.wave_length[i]])  # bruuuuh
             tmp_constraint[i] = -sample.data[i].rad()
             A_ub.append(tmp_constraint)
 
@@ -40,9 +40,9 @@ class UtilHelper:
 
     @staticmethod
     def plot_regression(coeffs: tuple[float, float], sample: Sample, title: str = "", offset: float = 0.25):
-        x = [sample.values[0] - offset]
-        x.extend(sample.values)
-        x.append(sample.values[-1] + offset)
+        x = [sample.wave_length[0] - offset]
+        x.extend(sample.wave_length)
+        x.append(sample.wave_length[-1] + offset)
 
         y = [coeffs[0] + coeffs[1] * x_i for x_i in x]
         plt.plot(x, y)
@@ -54,8 +54,8 @@ class UtilHelper:
     def build_inform_set(sample: Sample, beta_opt: tuple[float, float], plot: bool = False, title: str = ""):
         tmp = list()
         for i in range(len(sample)):
-            tmp.append(np.array([1, sample.values[i], -sample.data[i].end]))
-            tmp.append(np.array([-1, -sample.values[i], sample.data[i].begin]))
+            tmp.append(np.array([1, sample.wave_length[i], -sample.data[i].end]))
+            tmp.append(np.array([-1, -sample.wave_length[i], sample.data[i].begin]))
         halfspaces = np.array(tmp)
         feasible_point = np.array(beta_opt)
 
@@ -85,9 +85,9 @@ class UtilHelper:
         for pair in hs.intersections:
             coeff_list.append((pair[0], pair[1]))
 
-        x = [sample.values[0] - offset]
-        x.extend(sample.values)
-        x.append(sample.values[-1] + offset)
+        x = [sample.wave_length[0] - offset]
+        x.extend(sample.wave_length)
+        x.append(sample.wave_length[-1] + offset)
 
         y = list()
         for coeffs in coeff_list:
@@ -108,7 +108,7 @@ class UtilHelper:
             y_max.append(max(tmp))
             y_min.append(min(tmp))
 
-        corridor = Sample(sample.values)
+        corridor = Sample(sample.wave_length)
         corridor.data = [Interval(y_mi, y_ma) for y_mi, y_ma in zip(y_min[1:len(y_min) - 1],
                                                                     y_max[1:len(y_max) - 1])]
 
@@ -125,8 +125,8 @@ class UtilHelper:
 
     @staticmethod
     def get_residuals(sample, coeffs):
-        res_sample = Sample(sample.values)
-        for interval, value in zip(sample.data, sample.values):
+        res_sample = Sample(sample.wave_length)
+        for interval, value in zip(sample.data, sample.wave_length):
             res_sample.append(Interval(interval.begin - (coeffs[0] + coeffs[1] * value),
                                        interval.end - (coeffs[0] + coeffs[1] * value)))
         return res_sample
@@ -178,4 +178,12 @@ class UtilHelper:
             y.append(elem[1])
             y.append(elem[1])
         plt.plot(x, y)
+        plt.xlabel('\u03bb (nm)')
+        plt.ylabel('\u03BC ')
         plt.show()
+
+        sample_new = Sample()
+        sample_new.data = y
+        sample_new.wave_length = x
+        sample_new.find_moda(factor=1.5, delta_step=1)
+        print(sample_new.multimoda)

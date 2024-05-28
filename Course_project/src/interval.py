@@ -1,6 +1,7 @@
 COLUMN_DELIMITER = " "
 
 DEFAULT_BLUE = '#1f77b4'
+EPS = 1e-9
 
 
 class Interval:
@@ -75,3 +76,6 @@ class Interval:
 
     def __sub__(self, other):
         return Interval(self.begin - other.end, self.end - other.begin)
+
+    # def __eq__(self, other):
+    #     return abs(self.begin - other.begin) < EPS and abs(self.end - other.end) < EPS
